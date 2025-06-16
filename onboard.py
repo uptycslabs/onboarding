@@ -204,7 +204,7 @@ def parse_arguments():
     parser.add_argument("--bucket-region", help="Bucket region (logs only)")
     parser.add_argument("--bucket-prefix", help="Optional bucket prefix (logs only)")
     parser.add_argument("--topics", type=lambda s: [topic.strip() for topic in s.split(",")], help="pubsub topic names (comma-separated) (logs only)")
-    parser.add_argument("--scope", choices=["account", "organization"], help="Scope (logs only)")
+    parser.add_argument("--scope", choices=["account", "organization"], help="Scope (logs and scanner only)")
 
     # Scanner-specific arguments
     parser.add_argument("--scanner-id", help="Scanner ID")
@@ -312,11 +312,22 @@ def build_payload(type: str, connector_type: str, args, api: UptycsAPI) -> dict:
             "tenantId": args.tenant_id,
             "regions": args.regions,
         })
+        if args.scope == "organization":
+            organization_id = api.get_tenant(args.tenant_id, connector_type, "organization")
+            if not organization_id:
+                print(f"Error: No organization found for tenant ID {args.tenant_id}.")
+                sys.exit(1)
+            payload["organizationId"] = organization_id
         if connector_type == "aws":
             payload.update({
                 "diskScanningEnabled": args.disk_scanning,
                 "serverlessScanningEnabled": args.lambda_scanning,
                 "bucketDataScanningEnabled": args.bucket_data_scanning,
+            })            
+        elif connector_type == "gcp":
+            payload.update({
+                "diskScanningEnabled": args.disk_scanning,
+                "serverlessScanningEnabled": args.lambda_scanning,
             })
 
     elif type == "target":
