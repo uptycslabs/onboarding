@@ -1,6 +1,6 @@
 # Uptycs Cloud Onboarding Tool
 
-A command-line tool for managing cloud integrations with Uptycs, supporting AWS, GCP, and Azure cloud providers.
+A command-line tool for managing cloud integrations with Uptycs, supporting AWS, GCP, Azure and IBM cloud providers.
 
 ## Features
 
@@ -9,6 +9,7 @@ A command-line tool for managing cloud integrations with Uptycs, supporting AWS,
   - Amazon Web Services (AWS)
   - Google Cloud Platform (GCP)
   - Microsoft Azure
+  - IBM Cloud ( Only Account CSPM Integration )
 - Manage different integration types:
   - Cloud accounts
   - Organizations
@@ -59,6 +60,7 @@ python onboard.py --config <config_file> --cloud <provider> --action <action> --
 - `--action`: Action to perform (create, update, delete, purge)
 - `--type`: Integration type (account, organization, logs, scanner, target, logs-pubsub)
 - `--tenant-id`: Tenant/Account ID
+- `--integration-prefix`: Integration prefix
 
 ### Cloud-Specific Arguments
 
@@ -67,17 +69,19 @@ python onboard.py --config <config_file> --cloud <provider> --action <action> --
 - `--role-arn`: IAM role ARN
 - `--external-id`: External ID for IAM role
 - `--integration-type`: Integration type (CLOUD_FORMATION_V2, SELF_MANAGED, etc.)
-- `--integration-prefix`: Integration prefix
+
 
 #### GCP
 - `--host-project-number`: Host project number
 - `--host-project-id`: Host project ID
-- `--integration-prefix`: Integration prefix
 
 #### Azure
 - `--azure-tenant-id`: Azure tenant ID
 - `--azure-subscription-id`: Azure subscription ID
-- `--integration-prefix`: Integration prefix
+
+#### IBM
+- `--profile-id`: Trusted Profile ID
+- `--object-group-id`: Asset Group Id
 
 ### Examples
 
