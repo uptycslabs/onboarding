@@ -179,7 +179,7 @@ def validate_args(args, required_fields):
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Uptycs Cloud Onboarding Script v1.0.0")
     parser.add_argument("--config", required=True, help="Path to Uptycs API configuration file")
-    parser.add_argument("--cloud", choices=["aws", "gcp", "azure"], required=True, help="Cloud provider")
+    parser.add_argument("--cloud", choices=["aws", "gcp", "azure", "ibm"], required=True, help="Cloud provider")
     parser.add_argument("--action", choices=["create", "update", "delete", "purge"], required=True, help="Action to perform")
     parser.add_argument("--type", choices=["account", "organization", "logs", "scanner", "target", "logs-pubsub"], required=True, help="type type")
     
@@ -198,6 +198,10 @@ def parse_arguments():
     # Azure-specific arguments
     parser.add_argument("--azure-tenant-id", help="Azure tenant ID")
     parser.add_argument("--azure-subscription-id", help="Azure subscription ID")
+
+    # IBM Cloud-specific arguments
+    parser.add_argument("--profile-id", help="IBM IAM Trusted Profile ID (IBM only)")
+    parser.add_argument("--object-group-id", help="IBM Cloud Object Group ID (IBM only)")
 
     # Logs arguments
     parser.add_argument("--bucket-name", help="Bucket name (logs only)")
@@ -220,7 +224,7 @@ def parse_arguments():
 
 def build_payload(type: str, connector_type: str, args, api: UptycsAPI) -> dict:
     if type in ["account", "organization", "scanner", "target"] and args.action not in ["delete", "update", "purge"]:
-        integration_type = "SELF_MANAGED" if connector_type in ["gcp", "azure"] else args.integration_type
+        integration_type = "SELF_MANAGED" if connector_type in ["gcp", "azure", "ibm"] else args.integration_type
         if connector_type == "aws":
             valid_types = {
                 "account": {"SELF_MANAGED", "CLOUD_FORMATION_V2"},
@@ -274,6 +278,14 @@ def build_payload(type: str, connector_type: str, args, api: UptycsAPI) -> dict:
                 print("Error: --azure-tenant-id is required for Azure account integration.")
                 sys.exit(1)
             payload["azureTenantId"] = args.azure_tenant_id
+        elif connector_type == "ibm":
+            payload.update({
+                "tenantName": args.tenant_name,
+                "accessConfig": {
+                    "profileID": args.profile_id,
+                },
+                "objectGroupId": args.object_group_id
+            })
 
     elif type == "organization" and args.action == "create":
         payload["organizationId"] = args.tenant_id
@@ -363,6 +375,8 @@ def main():
                 required_fields += ["host_project_number"]
             elif args.cloud == "azure":
                 required_fields += ["azure_tenant_id"]
+            elif args.cloud == "ibm":
+                required_fields += ["tenant_name", "profile_id", "object_group_id"]
 
     elif args.type == "organization":
         if args.action == "create":
