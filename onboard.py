@@ -144,10 +144,10 @@ class UptycsAPI:
             elif action == "delete":
                 return self._make_request('DELETE', endpoint)
             else:
-                print(f"Error: Unsupported action '{action}' for JUNO BYOK")
+                print(f"Error: Unsupported action '{action}' for Juno BYOK")
                 sys.exit(1)
         except Exception as e:
-            print(f"Error managing JUNO BYOK: {e}")
+            print(f"Error managing Juno BYOK: {e}")
             sys.exit(1)
 
     def delete_type(self, tenant_id: str, type: str, connector_type: Optional[str] = None, name: Optional[str] = None) -> Optional[Dict[str, Any]]:
@@ -198,7 +198,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Uptycs Cloud Onboarding Script v1.0.0")
     parser.add_argument("--config", required=True, help="Path to Uptycs API configuration file")
     parser.add_argument("--cloud", choices=["aws", "gcp", "azure", "ibm"], help="Cloud operations: provide cloud provider")
-    parser.add_argument("--juno", action="store_true", help="JUNO operations")
+    parser.add_argument("--juno", action="store_true", help="Juno operations")
     parser.add_argument("--action", choices=["create", "update", "delete", "purge", "get"], required=True, help="Action to perform")
     parser.add_argument("--type", choices=["account", "organization", "logs", "scanner", "target", "logs-pubsub", "byok"], required=True, help="type type")
     
@@ -239,10 +239,10 @@ def parse_arguments():
     # Target-specific arguments
     parser.add_argument("--uptycs-scanner", choices=["true", "false"], default="false", help="Enable Uptycs Managed Scanner (AWS scanner only)")
 
-    # JUNO BYOK arguments
-    parser.add_argument("--key", help="AWS access key ID (JUNO BYOK only)")
-    parser.add_argument("--secret", help="AWS secret access key (JUNO BYOK only)")
-    parser.add_argument("--region", default="us-east-1", help="AWS region (JUNO BYOK only, default: us-east-1)")
+    # Juno BYOK arguments
+    parser.add_argument("--key", help="AWS access key ID (Juno BYOK only)")
+    parser.add_argument("--secret", help="AWS secret access key (Juno BYOK only)")
+    parser.add_argument("--region", default="us-east-1", help="AWS region (Juno BYOK only, default: us-east-1)")
 
     return parser.parse_args()
 
@@ -395,7 +395,7 @@ def main():
         print("Error: --type byok is only supported with --juno")
         sys.exit(1)
 
-    # Handle JUNO operations
+    # Handle Juno operations
     if args.juno:
         if args.type != "byok":
             print("Error: --juno requires --type byok")
