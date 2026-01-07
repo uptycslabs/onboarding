@@ -197,8 +197,8 @@ def validate_args(args, required_fields):
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Uptycs Cloud Onboarding Script v1.0.0")
     parser.add_argument("--config", required=True, help="Path to Uptycs API configuration file")
-    parser.add_argument("--cloud", choices=["aws", "gcp", "azure", "ibm"], help="Cloud provider")
-    parser.add_argument("--juno", action="store_true", help="JUNO operations (use instead of --cloud)")
+    parser.add_argument("--cloud", choices=["aws", "gcp", "azure", "ibm"], help="Cloud operations: provide cloud provider")
+    parser.add_argument("--juno", action="store_true", help="JUNO operations")
     parser.add_argument("--action", choices=["create", "update", "delete", "purge", "get"], required=True, help="Action to perform")
     parser.add_argument("--type", choices=["account", "organization", "logs", "scanner", "target", "logs-pubsub", "byok"], required=True, help="type type")
     
