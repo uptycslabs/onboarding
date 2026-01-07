@@ -68,8 +68,10 @@ class UptycsAPI:
 
     def _build_url(self, endpoint: str) -> str:
         try:
-            prefix = "v2" if "agentless" in endpoint else ""
+            prefix = "v2" if ("agentless" in endpoint or endpoint.startswith("v2/")) else ""
             if prefix:
+                # Remove v2/ prefix from endpoint if it exists since we're adding it in the URL
+                endpoint = endpoint.replace("v2/", "", 1) if endpoint.startswith("v2/") else endpoint
                 return f"{self.base_url}/public/api/{prefix}/customers/{self.customer_id}/{endpoint}"
             return f"{self.base_url}/public/api/customers/{self.customer_id}/{endpoint}"
         except Exception as e:
@@ -81,7 +83,6 @@ class UptycsAPI:
             url = self._build_url(endpoint)
             self._update_jwt_token()
             response = self.session.request(method, url, **kwargs)
-            print(response.text)
             response.raise_for_status()
             if response.text.strip():
                 try:
@@ -132,6 +133,23 @@ class UptycsAPI:
         except Exception as e:
             print(f"Error managing type: {e}") 
 
+    def manage_juno_byok(self, action: str, key: Optional[str] = None, secret: Optional[str] = None, region: str = "us-east-1") -> Any:
+        try:
+            endpoint = "v2/juno/byok_credentials"
+            if action == "get":
+                return self._make_request('GET', endpoint)
+            elif action in ["create", "update"]:
+                payload = {"key": key, "secret": secret, "region": region}
+                return self._make_request('POST', endpoint, json=payload)
+            elif action == "delete":
+                return self._make_request('DELETE', endpoint)
+            else:
+                print(f"Error: Unsupported action '{action}' for Juno BYOK")
+                sys.exit(1)
+        except Exception as e:
+            print(f"Error managing Juno BYOK: {e}")
+            sys.exit(1)
+
     def delete_type(self, tenant_id: str, type: str, connector_type: Optional[str] = None, name: Optional[str] = None) -> Optional[Dict[str, Any]]:
         try:
             if type == "account":
@@ -179,9 +197,10 @@ def validate_args(args, required_fields):
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Uptycs Cloud Onboarding Script v1.0.0")
     parser.add_argument("--config", required=True, help="Path to Uptycs API configuration file")
-    parser.add_argument("--cloud", choices=["aws", "gcp", "azure", "ibm"], required=True, help="Cloud provider")
-    parser.add_argument("--action", choices=["create", "update", "delete", "purge"], required=True, help="Action to perform")
-    parser.add_argument("--type", choices=["account", "organization", "logs", "scanner", "target", "logs-pubsub"], required=True, help="type type")
+    parser.add_argument("--cloud", choices=["aws", "gcp", "azure", "ibm"], help="Cloud operations: provide cloud provider")
+    parser.add_argument("--juno", action="store_true", help="Juno operations")
+    parser.add_argument("--action", choices=["create", "update", "delete", "purge", "get"], required=True, help="Action to perform")
+    parser.add_argument("--type", choices=["account", "organization", "logs", "scanner", "target", "logs-pubsub", "byok"], required=True, help="type type")
     
     # CSPM-specific arguments
     parser.add_argument("--tenant-id", help="Tenant/Account ID")
@@ -219,6 +238,11 @@ def parse_arguments():
     
     # Target-specific arguments
     parser.add_argument("--uptycs-scanner", choices=["true", "false"], default="false", help="Enable Uptycs Managed Scanner (AWS scanner only)")
+
+    # Juno BYOK arguments
+    parser.add_argument("--key", help="AWS access key ID (Juno BYOK only)")
+    parser.add_argument("--secret", help="AWS secret access key (Juno BYOK only)")
+    parser.add_argument("--region", default="us-east-1", help="AWS region (Juno BYOK only, default: us-east-1)")
 
     return parser.parse_args()
 
@@ -365,6 +389,35 @@ def main():
     except ValueError as e:
         print(f"Error: {e}")
         sys.exit(1)
+
+    # Validate that --type byok requires --juno
+    if args.type == "byok" and not args.juno:
+        print("Error: --type byok is only supported with --juno")
+        sys.exit(1)
+
+    # Handle Juno operations
+    if args.juno:
+        if args.type != "byok":
+            print("Error: --juno requires --type byok")
+            sys.exit(1)
+
+        # Validate required fields for BYOK operations
+        if args.action in ["create", "update"]:
+            if not args.key or not args.secret:
+                print("Error: --key and --secret are required for BYOK create/update actions")
+                sys.exit(1)
+
+        # Execute BYOK operation
+        result = api.manage_juno_byok(args.action, args.key, args.secret, args.region)
+        if result:
+            print(json.dumps(result, indent=2))
+        return
+
+    # Handle cloud operations
+    if not args.cloud:
+        print("Error: --cloud is required for cloud operations")
+        sys.exit(1)
+
     required_fields = ["tenant_id"]
     if args.type == "account":
         if args.action == "create":

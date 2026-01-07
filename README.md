@@ -16,6 +16,7 @@ A command-line tool for managing cloud integrations with Uptycs, supporting AWS,
   - Log integrations
   - Scanner configurations
   - Target configurations
+- Juno BYOK (Bring Your Own Key) credential management
 
 ## Prerequisites
 
@@ -47,20 +48,40 @@ Create a JSON configuration file with your Uptycs API credentials:
 
 ## Usage
 
-The basic command structure is:
+### Cloud Integration Operations
+
+The basic command structure for cloud operations is:
 
 ```bash
 python onboard.py --config <config_file> --cloud <provider> --action <action> --type <type> [additional options]
 ```
 
+### Juno BYOK Operations
+
+For Juno BYOK credential management:
+
+```bash
+python onboard.py --config <config_file> --juno --action <action> --type byok [additional options]
+```
+
 ### Required Arguments
 
+#### For Cloud Operations
 - `--config`: Path to Uptycs API configuration file
-- `--cloud`: Cloud provider (aws, gcp, azure)
-- `--action`: Action to perform (create, update, delete, purge)
+- `--cloud`: Cloud provider (aws, gcp, azure, ibm)
+- `--action`: Action to perform (create, update, delete, purge, get)
 - `--type`: Integration type (account, organization, logs, scanner, target, logs-pubsub)
-- `--tenant-id`: Tenant/Account ID
-- `--integration-prefix`: Integration prefix
+- `--tenant-id`: Tenant/Account ID (for cloud operations)
+- `--integration-prefix`: Integration prefix (for cloud operations)
+
+#### For Juno BYOK Operations
+- `--config`: Path to Uptycs API configuration file
+- `--juno`: Flag to indicate Juno operations
+- `--action`: Action to perform (create, update, delete, get)
+- `--type`: Must be `byok` (only valid type for Juno operations)
+- `--key`: AWS access key ID (required for create/update)
+- `--secret`: AWS secret access key (required for create/update)
+- `--region`: AWS region (optional, default: us-east-1)
 
 ### Cloud-Specific Arguments
 
@@ -119,6 +140,44 @@ python onboard.py --config config.json \
     --tenant-id "subscription-id"
 ```
 
+4. Create Juno BYOK credentials:
+```bash
+python onboard.py --config config.json \
+    --juno \
+    --action create \
+    --type byok \
+    --key "AKIAIOSFODNN7EXAMPLE" \
+    --secret "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" \
+    --region "us-east-1"
+```
+
+5. Get Juno BYOK credentials:
+```bash
+python onboard.py --config config.json \
+    --juno \
+    --action get \
+    --type byok
+```
+
+6. Update Juno BYOK credentials:
+```bash
+python onboard.py --config config.json \
+    --juno \
+    --action update \
+    --type byok \
+    --key "AKIAIOSFODNN7EXAMPLE" \
+    --secret "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" \
+    --region "us-west-2"
+```
+
+7. Delete Juno BYOK credentials:
+```bash
+python onboard.py --config config.json \
+    --juno \
+    --action delete \
+    --type byok
+```
+
 ## Error Handling
 
 The tool includes comprehensive error handling and will provide clear error messages if:
@@ -126,6 +185,16 @@ The tool includes comprehensive error handling and will provide clear error mess
 - API configuration is invalid
 - Cloud provider credentials are incorrect
 - API requests fail
+- Invalid flag combinations (e.g., using `--type byok` without `--juno`)
+
+## Important Notes
+
+### Juno BYOK
+- The `--type byok` option is **only** supported with the `--juno` flag
+- BYOK operations require AWS credentials (access key ID and secret access key)
+- The default AWS region is `us-east-1` if not specified
+- Use the `get` action to retrieve existing BYOK credentials
+- `create` and `update` actions require both `--key` and `--secret` parameters
 
 ## Support
 
